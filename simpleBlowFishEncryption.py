@@ -2,6 +2,7 @@ import blowfish
 import binascii
 from struct import pack
 
+
 def pad(data):
     bs = 8
     plen = bs - len(data) % bs
