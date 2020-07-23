@@ -1,29 +1,45 @@
-from Crypto.Cipher import Blowfish
+import blowfish
 import binascii
+from struct import pack
 
-
-def pad(data, block_size):
-    return bytes((data + (block_size - len(data) % block_size) * chr(block_size - len(data) % block_size)), 'utf-8')
+def pad(data):
+    bs = 8
+    plen = bs - len(data) % bs
+    padding = [plen] * plen
+    padding = pack("b" * plen, *padding)
+    return data + padding
 
 
 def unpad(data):
-    return data[0:-ord(data[-1])]
+    last_byte = data[-1]
+    data = data[: -(last_byte if type(last_byte) is int else ord(last_byte))]
+    return data
 
 
 def encrypt(data, secret):
-    c1 = Blowfish.new(secret, Blowfish.MODE_ECB)
-    return binascii.hexlify(c1.encrypt(pad(data, 16))).decode('utf-8')
+    data = bytes(data,'ascii')
+    secret = bytes(secret, "ascii")
+    data = pad(data)
+    cipher = blowfish.Cipher(secret)
+    data_encrypted = b"".join(cipher.encrypt_ecb((data)))
+    data_hex = binascii.hexlify(data_encrypted)
+    return data_hex
 
 
 def decrypt(data, secret):
-    c1 = Blowfish.new(secret, Blowfish.MODE_ECB)
-    return unpad(c1.decrypt(binascii.unhexlify(bytes(data, 'utf-8'))).decode('utf-8'))
+    data = bytes(data,'ascii')
+    secret = bytes(secret, "ascii")
+    cipher = blowfish.Cipher(secret)
+    data_decrypted = b"".join(cipher.decrypt_ecb(binascii.unhexlify(data)))
+    data_unpad = unpad(data_decrypted)
+    data_decode = data_unpad.decode('ascii')
+    return data_decode
 
 
 if __name__ == '__main__':
     mode = input('Decrypt(dec) / Encrypt(enc) ? : ')
     string = input('Enter your string: ')
-    key = bytes(input('Enter your key: '), 'utf-8')
+    key = input('Enter your key: ')
     if (mode == 'enc') or (mode == 'encrypt'):
         encrypted = encrypt(string, key)
         print(encrypted)
@@ -32,3 +48,4 @@ if __name__ == '__main__':
         print(decrypted)
     else:
         print('Rerun and select a mode.')
+
